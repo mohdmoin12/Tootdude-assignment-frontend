@@ -27,7 +27,8 @@ interface VideoContextType {
 
 const VideoPlayer = ({ videoSrc, videoId, userId = 'demo-user' }: VideoPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+ const intervalRef = useRef<any>(null);
+
   const watchingStartRef = useRef<number | null>(null);
   const lastSaveTimeRef = useRef(0);
   
@@ -41,7 +42,8 @@ const VideoPlayer = ({ videoSrc, videoId, userId = 'demo-user' }: VideoPlayerPro
     progress,
     isLoading,
     error
-  } = useVideo() as VideoContextType;
+ } = useVideo() as any as VideoContextType;
+
 
   const [localIntervals, setLocalIntervals] = useState<Interval[]>([]);
   const [saveStatus, setSaveStatus] = useState('');

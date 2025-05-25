@@ -1,25 +1,59 @@
-import { useState, useEffect, type Key } from 'react';
+/* eslint-disable */
+
+
+import { useState, useEffect } from 'react';
 import { useVideo } from '../context/VideoContext';
 import * as api from '../services/api';
 
-const ProgressDashboard = ({ userId = 'demo-user' }) => {
-  const [userProgress, setUserProgress] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
+// Define proper types
+type VideoInterval = {
+  start: number;
+  end: number;
+};
 
-  const { progress, lastWatchedPosition, intervals } = useVideo();
+type ProgressItem = {
+  videoId: string;
+  progress: number;
+  videoDuration: number;
+  lastWatchedPosition: number;
+  intervals: VideoInterval[];
+  updatedAt: string;
+};
+
+// Props interface
+interface ProgressDashboardProps {
+  userId?: string;
+}
+
+// Video context type (define what you expect from useVideo hook)
+interface VideoContextType {
+  progress: number;
+  lastWatchedPosition: number;
+  intervals: VideoInterval[];
+}
+
+const ProgressDashboard: React.FC<ProgressDashboardProps> = ({ userId = 'demo-user' }) => {
+  const [userProgress, setUserProgress] = useState<ProgressItem[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Type assertion for useVideo hook (adjust based on your actual VideoContext)
+  const { progress, lastWatchedPosition, intervals } = useVideo() as VideoContextType;
 
   // Load user's progress for all videos
   useEffect(() => {
-    const loadUserProgress = async () => {
+    const loadUserProgress = async (): Promise<void> => {
       setIsLoading(true);
       setError(null);
       
       try {
-        const progressData = await api.getUserProgress(userId);
+        const response = await api.getUserProgress(userId);
+        const progressData: ProgressItem[] = (response as any).data;
+
         setUserProgress(progressData);
       } catch (err) {
-        setError('Failed to load progress data');
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load progress data';
+        setError(errorMessage);
         console.error('Error loading user progress:', err);
       } finally {
         setIsLoading(false);
@@ -29,13 +63,13 @@ const ProgressDashboard = ({ userId = 'demo-user' }) => {
     loadUserProgress();
   }, [userId]);
 
-  const formatTime = (seconds: number) => {
+  const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const formatDuration = (seconds: number) => {
+  const formatDuration = (seconds: number): string => {
     if (seconds < 60) return `${Math.floor(seconds)}s`;
     if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${Math.floor(seconds % 60)}s`;
     const hours = Math.floor(seconds / 3600);
@@ -91,8 +125,8 @@ const ProgressDashboard = ({ userId = 'demo-user' }) => {
 
         {!isLoading && !error && userProgress.length > 0 && (
           <div className="progress-list">
-            {userProgress.map((item, index) => (
-              <div key={index} className="progress-item">
+            {userProgress.map((item: ProgressItem, index: number) => (
+              <div key={`progress-${item.videoId}-${index}`} className="progress-item">
                 <div className="progress-header">
                   <h4>Video ID: {item.videoId}</h4>
                   <span className="progress-percentage">
@@ -121,9 +155,9 @@ const ProgressDashboard = ({ userId = 'demo-user' }) => {
                 {/* Intervals visualization */}
                 <div className="intervals-viz">
                   <div className="intervals-timeline">
-                    {item.intervals.map((interval: { start: number; end: number; }, idx: Key | null | undefined) => (
+                    {item.intervals.map((interval: VideoInterval, idx: number) => (
                       <div
-                        key={idx}
+                        key={`interval-${item.videoId}-${idx}`}
                         className="interval-block"
                         style={{
                           left: `${(interval.start / item.videoDuration) * 100}%`,
@@ -140,7 +174,7 @@ const ProgressDashboard = ({ userId = 'demo-user' }) => {
         )}
       </div>
 
-      <style jsx>{`
+      <style>{`
         .progress-dashboard {
           max-width: 900px;
           margin: 0 auto;

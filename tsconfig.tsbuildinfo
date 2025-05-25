@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/react-app-env.d.ts","./src/vite-env.d.ts","./src/components/progressdashboard.tsx","./src/components/videoselector.tsx","./src/components/videoplayer.tsx","./src/context/videocontext.tsx","./src/services/api.ts"],"version":"5.8.3"}
