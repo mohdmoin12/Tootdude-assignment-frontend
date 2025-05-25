@@ -1,10 +1,8 @@
-
-/* eslint-disable */
-
+// Updated api.ts with better error handling and debugging
 
 import axios, { AxiosInstance } from 'axios';
 
-// TypeScript interfaces
+// TypeScript interfaces (keeping your existing ones)
 export interface Interval {
     start: number;
     end: number;
@@ -39,46 +37,60 @@ export interface HealthStatus {
     status: string;
 }
 
+// Debug the API URL
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+console.log('Using API URL:', API_URL);
+
 // Create axios instance with base configuration
 const api: AxiosInstance = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
-    timeout: 10000,
+    baseURL: API_URL,
+    timeout: 30000, // Increased timeout
     headers: {
         'Content-Type': 'application/json',
     },
+    // Force HTTPS if environment is production
+    ...(import.meta.env.PROD && {
+        httpsAgent: undefined, // Let axios handle HTTPS properly
+    })
 });
 
 // Request interceptor
 api.interceptors.request.use(
     (config) => {
-        // Add any auth headers here if needed
+        console.log('Making request to:', config.baseURL + config.url);
         return config;
     },
     (error) => {
+        console.error('Request interceptor error:', error);
         return Promise.reject(error);
     }
 );
 
-// Response interceptor - returns response.data directly
+// Response interceptor with better error handling
 api.interceptors.response.use(
     (response) => {
+        console.log('Response received:', response.status);
         return response.data;
     },
     (error) => {
+        console.error('Response error:', {
+            message: error.message,
+            status: error.response?.status,
+            data: error.response?.data,
+            config: {
+                url: error.config?.url,
+                method: error.config?.method,
+                baseURL: error.config?.baseURL
+            }
+        });
+        
         const errorMessage = error.response?.data?.error || error.message || 'An error occurred';
-        console.error('API Error:', errorMessage);
         return Promise.reject(new Error(errorMessage));
     }
 );
 
 /**
  * Save video progress
- * @param userId - User ID
- * @param videoId - Video ID
- * @param intervals - Array of watched intervals
- * @param videoDuration - Total video duration in seconds
- * @param currentTime - Current playback time
- * @returns API response
  */
 export const saveProgress = async (
     userId: string, 
@@ -88,7 +100,7 @@ export const saveProgress = async (
     currentTime: number
 ): Promise<ProgressResponse> => {
     try {
-        // Since the interceptor returns response.data, we can cast the return type
+        console.log('Saving progress for:', { userId, videoId, currentTime });
         const response = await api.post('/progress', {
             userId,
             videoId,
@@ -98,53 +110,52 @@ export const saveProgress = async (
         }) as ProgressResponse;
         return response;
     } catch (error) {
+        console.error('Save progress error:', error);
         throw error;
     }
 };
 
 /**
  * Get video progress
- * @param userId - User ID
- * @param videoId - Video ID
- * @returns Progress data
  */
 export const getProgress = async (userId: string, videoId: string): Promise<GetProgressResponse> => {
     try {
-        // Since the interceptor returns response.data, we can cast the return type
+        console.log('Getting progress for:', { userId, videoId });
         const response = await api.get('/progress', {
             params: { userId, videoId }
         }) as GetProgressResponse;
         return response;
     } catch (error) {
+        console.error('Get progress error:', error);
         throw error;
     }
 };
 
 /**
  * Get all progress for a user
- * @param userId - User ID
- * @returns Array of progress data
  */
 export const getUserProgress = async (userId: string): Promise<UserProgressResponse[]> => {
     try {
-        // Since the interceptor returns response.data, we can cast the return type
+        console.log('Getting user progress for:', userId);
         const response = await api.get(`/user/${userId}/progress`) as UserProgressResponse[];
         return response;
     } catch (error) {
+        console.error('Get user progress error:', error);
         throw error;
     }
 };
 
 /**
- * Health check
- * @returns Health status
+ * Health check with detailed logging
  */
 export const healthCheck = async (): Promise<HealthStatus> => {
     try {
-        // Since the interceptor returns response.data, we can cast the return type
+        console.log('Performing health check...');
         const response = await api.get('/health') as HealthStatus;
+        console.log('Health check successful:', response);
         return response;
     } catch (error) {
+        console.error('Health check failed:', error);
         throw error;
     }
 };
