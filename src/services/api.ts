@@ -57,7 +57,7 @@ const api: AxiosInstance = axios.create({
 // Request interceptor
 api.interceptors.request.use(
     (config) => {
-        console.log('Making request to:', config.baseURL + config.url);
+        // console.log('Making request to:', config.baseURL + config.url);
         return config;
     },
     (error) => {
